@@ -3,32 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Camera Demo</title>
+    <title>Video Chat</title>
 </head>
 <body>
-    <h1>Camera Demo</h1>
-    <button id="enableCameraButton">Mở camera</button>
-    <video id="videoElement" autoplay></video>
+    <h1>Video Chat</h1>
+    <video id="localVideo" autoplay></video>
+    <video id="remoteVideo" autoplay></video>
+    <button id="startButton">Bắt đầu</button>
     <script>
-        // Lấy reference tới các element
-        const videoElement = document.getElementById('videoElement');
-        const enableCameraButton = document.getElementById('enableCameraButton');
+        const localVideo = document.getElementById('localVideo');
+        const remoteVideo = document.getElementById('remoteVideo');
+        const startButton = document.getElementById('startButton');
 
-        // Hàm để mở camera
-        function openCamera() {
-            navigator.mediaDevices.getUserMedia({ video: true }) // Yêu cầu truy cập vào video
-                .then(function(stream) {
-                    videoElement.srcObject = stream; // Gán stream vào video element để hiển thị
-                })
-                .catch(function(err) {
-                    console.error('Không thể truy cập vào camera!', err);
-                });
+        let localStream;
+        let remoteStream;
+        let pc1;
+        let pc2;
+
+        // Hàm bắt đầu video call
+        async function startCall() {
+            try {
+                // Lấy stream từ camera và microphone
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+
+                // Hiển thị video của người gọi
+                localVideo.srcObject = localStream;
+
+                // Khởi tạo peer connection
+                pc1 = new RTCPeerConnection();
+                pc1.addStream(localStream);
+
+                // Tạo offer
+                const offer = await pc1.createOffer();
+                await pc1.setLocalDescription(offer);
+
+                // Truyền offer từ người gọi đến người nhận (có thể sử dụng signaling server)
+                // Ở đây làm giả định rằng offer đã được truyền đi và người nhận nhận được
+
+                // Khởi tạo peer connection của người nhận
+                pc2 = new RTCPeerConnection();
+                pc2.ontrack = handleRemoteStreamAdded;
+
+                // Thêm local stream vào peer connection của người nhận
+                localStream.getTracks().forEach(track => pc2.addTrack(track, localStream));
+
+                // Set remote description và create answer
+                await pc2.setRemoteDescription(pc1.localDescription);
+                const answer = await pc2.createAnswer();
+                await pc2.setLocalDescription(answer);
+
+                // Set local description cho người gọi
+                await pc1.setRemoteDescription(pc2.localDescription);
+            } catch (error) {
+                console.error('Error starting call:', error);
+            }
         }
 
-        // Sự kiện khi nhấn nút "Mở camera"
-        enableCameraButton.addEventListener('click', function() {
-            openCamera();
-        });
+        // Xử lý khi stream từ người nhận được thêm vào
+        function handleRemoteStreamAdded(event) {
+            remoteStream = event.streams[0];
+            remoteVideo.srcObject = remoteStream;
+        }
+
+        // Sự kiện khi nhấn nút "Bắt đầu"
+        startButton.addEventListener('click', startCall);
     </script>
 </body>
 </html>
