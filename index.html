@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera Demo</title>
+</head>
+<body>
+    <h1>Camera Demo</h1>
+    <button id="enableCameraButton">Mở camera</button>
+    <video id="videoElement" autoplay></video>
+    <script>
+        // Lấy reference tới các element
+        const videoElement = document.getElementById('videoElement');
+        const enableCameraButton = document.getElementById('enableCameraButton');
+
+        // Hàm để mở camera
+        function openCamera() {
+            navigator.mediaDevices.getUserMedia({ video: true }) // Yêu cầu truy cập vào video
+                .then(function(stream) {
+                    videoElement.srcObject = stream; // Gán stream vào video element để hiển thị
+                })
+                .catch(function(err) {
+                    console.error('Không thể truy cập vào camera!', err);
+                });
+        }
+
+        // Sự kiện khi nhấn nút "Mở camera"
+        enableCameraButton.addEventListener('click', function() {
+            openCamera();
+        });
+    </script>
+</body>
+</html>
